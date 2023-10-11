@@ -2,7 +2,7 @@
 name = "Stockify"
 version = "0.1.0"
 description = ""
-authors = ["ankit rana <ankitranastun@gmail.com>"]
+authors = ["Swati"]
 [tool.poetry.dependencies]
 python = "^3.7"
 Flask = "2.0.2"
