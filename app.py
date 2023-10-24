@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #**************** IMPORT PACKAGES ********************
-from flask import Flask, render_template, request, flash, redirect, url_for
+from flask import Flask, render_template, request
 from alpha_vantage.timeseries import TimeSeries
 import pandas as pd
 import numpy as np
@@ -10,11 +10,15 @@ import matplotlib.pyplot as plt
 import statsmodels.api as sm
 plt.style.use('ggplot')
 import math, random
-from datetime import datetime
-import datetime as dt
+from datetime import datetime, timedelta
 import yfinance as yf
 from sklearn.linear_model import LinearRegression
 import constants as ct
+from constants import NEWS_API
+from datetime import datetime, timedelta
+from nsenti import nsenti
+import requests
+from textblob import TextBlob
 
 # Ignore Warnings
 import warnings
@@ -22,6 +26,8 @@ warnings.filterwarnings("ignore")
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
+import nltk
+nltk.download('punkt')
 from constants import ALPHA_API
 
 #***************** FLASK *****************************
@@ -44,6 +50,7 @@ def index():
 @app.route('/insertintotable',methods = ['POST'])
 def insertintotable():
     nm = request.form['nm']
+    nm = nm.upper()
     print('my value is ' + nm)
 
     #**************** FUNCTIONS TO FETCH DATA ***************************
@@ -327,6 +334,115 @@ def insertintotable():
         print("##############################################################################")
         return df, lr_pred, forecast_set, mean, error_lr
     
+    def retrieving_news_polarity(symbol):
+        stock_ticker_map = pd.read_csv('Yahoo-Finance-Ticker-Symbols.csv')
+        stock_full_form = stock_ticker_map[stock_ticker_map['Ticker']==symbol]
+        symbol = stock_full_form['Name'].to_list()[0][0:12]
+        QUERY = f'{symbol} STOCK'
+        FROM_DATE = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        url = f'https://api.worldnewsapi.com/search-news'
+        param = {
+            "api-key": NEWS_API,
+            "text": QUERY,
+            "earliest-publish-date": FROM_DATE
+        }
+        latest = requests.get(url, param)
+        news_data = latest.json()
+        # df = pd.DataFrame(columns=['title', 'text', 'sentiment'])
+        news_sentiment = [] #List of news alongside polarity
+        global_polarity = 0 #Polarity of all news === Sum of polarities of individual news
+        news_list=[] #List of news only => to be displayed on web page
+        #Count Positive, Negative to plot pie chart
+        pos=0 #Num of pos news
+        neg=1 #Num of negative news
+        data_to_append = []
+        for news in news_data['news']:
+            count = 10
+            title = news['title']
+            # news_list.append(title)
+            # text = news_data['news'][i]['text']
+            # sentiment = news_data['news'][i]['sentiment']
+            blob = TextBlob(title)
+            polarity = 0 #Polarity of single individual news
+            for sentence in blob.sentences:
+                # print(sentence)
+                polarity += sentence.sentiment.polarity
+                if polarity>0:
+                    pos=pos+1
+                if polarity<0:
+                    neg=neg+1
+                
+                global_polarity += sentence.sentiment.polarity
+                if count > 0:
+                    news_list.append(title)
+
+                news_sentiment.append(nsenti(title, polarity))
+                count=count-1
+        if len(news_sentiment) != 0:
+            global_polarity = global_polarity / len(news_sentiment)
+        else:
+            global_polarity = global_polarity
+        neutral=ct.num_of_news-pos-neg
+        if neutral<0:
+            neg=neg+neutral
+            neutral=20
+        if len(news_list) == 0:
+            news_list = ['COULDNOT EXTRACT NEWS']
+            pos = 0
+            neg = 0
+            neutral = 10
+            global_polarity = 0
+        print()
+        print("##############################################################################")
+        print("Positive News :",pos,"Negative News :",neg,"Neutral News :",neutral)
+        print("##############################################################################")
+        labels=['Positive','Negative','Neutral']
+        sizes = [pos,neg,neutral]
+        explode = (0, 0, 0)
+        fig = plt.figure(figsize=(7.2,4.8),dpi=65)
+        fig1, ax1 = plt.subplots(figsize=(7.2,4.8),dpi=65)
+        ax1.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%', startangle=90)
+        # Equal aspect ratio ensures that pie is drawn as a circle
+        ax1.axis('equal')  
+        plt.tight_layout()
+        plt.savefig('static/SA.png')
+        plt.close(fig)
+        #plt.show()
+        if global_polarity>0:
+            print()
+            print("##############################################################################")
+            print("News Polarity: Overall Positive")
+            print("##############################################################################")
+            news_pol="Overall Positive"
+        else:
+            print()
+            print("##############################################################################")
+            print("News Polarity: Overall Negative")
+            print("##############################################################################")
+            news_pol="Overall Negative"
+        return global_polarity,news_list,news_pol,pos,neg,neutral    
+    
+    def recommending(df, global_polarity,today_stock,mean):
+        if today_stock.iloc[-1]['Close'] < mean:
+            if global_polarity > 0:
+                idea="RISE"
+                decision="BUY"
+                print()
+                print("##############################################################################")
+                print("According to the ML Predictions and Sentiment Analysis of News, a",idea,"in",quote,"stock is expected => ",decision)
+            elif global_polarity <= 0:
+                idea="FALL"
+                decision="SELL"
+                print()
+                print("#############################################################################")
+                print("According to the ML Predictions and Sentiment Analysis of News, a",idea,"in",quote,"stock is expected => ",decision)
+        else:
+            idea="FALL"
+            decision="SELL"
+            print()
+            print("##############################################################################")
+            print("According to the ML Predictions and Sentiment Analysis of News, a",idea,"in",quote,"stock is expected => ",decision)
+        return idea, decision
 
     #**************GET DATA ***************************************
     quote=nm
@@ -356,43 +472,33 @@ def insertintotable():
         arima_pred, error_arima=ARIMA_ALGO(df)
         lstm_pred, error_lstm=LSTM_ALGO(df)
         df, lr_pred, forecast_set,mean,error_lr=LIN_REG_ALGO(df)
-        # polarity,tw_list,tw_pol,pos,neg,neutral = retrieving_tweets_polarity(quote)
+        try:
+            polarity,tw_list,tw_pol,pos,neg,neutral = retrieving_news_polarity(quote)
+        except:
+            polarity,tw_list,tw_pol,pos,neg,neutral = 0, ['Couldnot Extract News'], ['Coulnot Extract Polarity'], 0, 0, 0
         
-        #idea, decision=recommending(df, polarity,today_stock,mean)
+        idea, decision=recommending(df, polarity,today_stock,mean)
         print()
         print("Forecasted Prices for Next 7 days:")
         print(forecast_set)
         today_stock=today_stock.round(2)
         # print(today_stock['Close'])
-        return render_template('results.html',quote=quote,arima_pred=round(arima_pred,2),lstm_pred=round(lstm_pred,2),
-                               lr_pred=round(lr_pred,2),open_s=today_stock['Open'].to_string(index=False),
-                               close_s=today_stock['Close'].to_string(index=False),adj_close=today_stock['Adj Close'].to_string(index=False),
-                               high_s=today_stock['High'].to_string(index=False),
-                               low_s=today_stock['Low'].to_string(index=False),vol=today_stock['Volume'].to_string(index=False),
-                               forecast_set=forecast_set,error_lr=round(error_lr,2),error_lstm=round(error_lstm,2),error_arima=round(error_arima,2))
         # return render_template('results.html',quote=quote,arima_pred=round(arima_pred,2),lstm_pred=round(lstm_pred,2),
         #                        lr_pred=round(lr_pred,2),open_s=today_stock['Open'].to_string(index=False),
         #                        close_s=today_stock['Close'].to_string(index=False),adj_close=today_stock['Adj Close'].to_string(index=False),
-        #                        tw_list=tw_list,tw_pol=tw_pol,idea=idea,decision=decision,high_s=today_stock['High'].to_string(index=False),
+        #                        high_s=today_stock['High'].to_string(index=False),
         #                        low_s=today_stock['Low'].to_string(index=False),vol=today_stock['Volume'].to_string(index=False),
         #                        forecast_set=forecast_set,error_lr=round(error_lr,2),error_lstm=round(error_lstm,2),error_arima=round(error_arima,2))
+        return render_template('results.html',quote=quote,arima_pred=round(arima_pred,2),lstm_pred=round(lstm_pred,2),
+                               lr_pred=round(lr_pred,2),open_s=today_stock['Open'].to_string(index=False),
+                               close_s=today_stock['Close'].to_string(index=False),adj_close=today_stock['Adj Close'].to_string(index=False),
+                               tw_list=tw_list,tw_pol=tw_pol,idea=idea,decision=decision,high_s=today_stock['High'].to_string(index=False),
+                               low_s=today_stock['Low'].to_string(index=False),vol=today_stock['Volume'].to_string(index=False),
+                               forecast_set=forecast_set,error_lr=round(error_lr,2),error_lstm=round(error_lstm,2),error_arima=round(error_arima,2))
 if __name__ == '__main__':
 #    app.run()
+   for file_path in ['static/ARIMA.png','static/LR.png', 'static/LSTM.png', 'static/SA.png']:
+        if os.path.exists(file_path):
+            os.remove(file_path)
    app.run(debug=True, port=8001)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
