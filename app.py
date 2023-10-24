@@ -471,7 +471,10 @@ def insertintotable():
         arima_pred, error_arima=ARIMA_ALGO(df)
         lstm_pred, error_lstm=LSTM_ALGO(df)
         df, lr_pred, forecast_set,mean,error_lr=LIN_REG_ALGO(df)
-        polarity,tw_list,tw_pol,pos,neg,neutral = retrieving_tweets_polarity(quote)
+        try:
+            polarity,tw_list,tw_pol,pos,neg,neutral = retrieving_tweets_polarity(quote)
+        except:
+            polarity,tw_list,tw_pol,pos,neg,neutral = 0, ['Couldnot Extract News'], ['Coulnot Extract Polarity'], 0, 0, 0
         
         idea, decision=recommending(df, polarity,today_stock,mean)
         print()
