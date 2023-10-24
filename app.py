@@ -497,4 +497,8 @@ def insertintotable():
                                forecast_set=forecast_set,error_lr=round(error_lr,2),error_lstm=round(error_lstm,2),error_arima=round(error_arima,2))
 if __name__ == '__main__':
 #    app.run()
+   for file_path in ['static/ARIMA.png','static/LR.png', 'static/LSTM.png', 'static/SA.png']:
+        if os.path.exists(file_path):
+            os.remove(file_path)
    app.run(debug=True, port=8001)
+
