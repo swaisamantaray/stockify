@@ -26,6 +26,8 @@ warnings.filterwarnings("ignore")
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
+import nltk
+nltk.download('punkt')
 from constants import ALPHA_API
 
 #***************** FLASK *****************************
