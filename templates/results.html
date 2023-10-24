@@ -322,10 +322,10 @@
                         </div>
                     </div>
                     <!-- /# column -->
-                    <!-- <div class="col-lg-12">
+                    <div class="col-lg-12">
                         <div class="card">
                             <div class="card-title">
-                                <h4>RECENT TWEETS AND NEWS ABOUT {{quote}} </h4>
+                                <h4>RECENT NEWS ABOUT {{quote}} </h4>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
@@ -333,7 +333,7 @@
                                         <thead>
                                             <tr>
                                                 <th>#</th>
-                                                <th>Tweets</th>
+                                                <th>News</th>
                                                 <th></th>
                                                 <th></th>
                                                 <th></th>
@@ -344,10 +344,12 @@
                                             <tr>
                                                 <td>
                                                     <div class="round-img">
-                                                        <a href="https://twitter.com/"><img style="padding: 0px,0px,0px,0px;width:70px;height: 70px;" src="{{url_for('static', filename='twitter-logo.png')}}" alt=""></a>
+                                                        <a href="https://worldnewsapi.com/"><img style="padding: 0px,0px,0px,0px;width:70px;height: 70px;" src="{{url_for('static', filename='twitter-logo.png')}}" alt=""></a>
                                                     </div>
                                                 </td>
-                                                
+                                                <td>{% for i in range(0,12) %}
+                                                    {{tw_list[i]}}<br>
+                                                    {% endfor %}</td>
                                                 <td><span></span></td>
                                                 <td><span></span></td>
                                                 <td><span class="badge badge-success"></span></td>
@@ -368,7 +370,7 @@
                                 <img src="{{url_for('static', filename='SA.png')}}" />
                             </div>
                         </div>
-                    </div> -->
+                    </div>
                     <div class="col-lg-6">
                         <div class="card">
                             <div class="card-title">
@@ -418,7 +420,7 @@
                                     <span><i class="ti-location-pin f-s-40"></i></span>
                                 </div>
                                 <div class="media-body media-text-right">
-                                    <p class="m-b-0 text-white">OVERALL TWEETS POLARITY</p>
+                                    <p class="m-b-0 text-white">OVERALL NEWS POLARITY</p>
                                 </div>
                             </div>
                         </div>
@@ -430,7 +432,7 @@
                                     <span><i class="ti-comment f-s-40"></i></span>
                                 </div>
                                 <div class="media-body media-text-right">
-                                    <!-- <h2 class="color-white text-white" style="text-align: left;">According to the ML Predictions & Sentiment Analysis of the Tweets, a in {{quote}} stock is expected => </h2> -->
+                                    <h2 class="color-white text-white" style="text-align: left;">According to the ML Predictions & Sentiment Analysis of the News, a {{idea}} in {{quote}} stock is expected is  {{decision}} </h2>
                                     <p class="m-b-0 text-white">RECOMMENDATION</p>
                                 </div>
                             </div>
