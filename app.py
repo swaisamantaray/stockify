@@ -334,7 +334,7 @@ def insertintotable():
         print("##############################################################################")
         return df, lr_pred, forecast_set, mean, error_lr
     
-    def retrieving_tweets_polarity(symbol):
+    def retrieving_news_polarity(symbol):
         stock_ticker_map = pd.read_csv('Yahoo-Finance-Ticker-Symbols.csv')
         stock_full_form = stock_ticker_map[stock_ticker_map['Ticker']==symbol]
         symbol = stock_full_form['Name'].to_list()[0][0:12]
@@ -349,12 +349,12 @@ def insertintotable():
         latest = requests.get(url, param)
         news_data = latest.json()
         # df = pd.DataFrame(columns=['title', 'text', 'sentiment'])
-        news_sentiment = [] #List of tweets alongside polarity
-        global_polarity = 0 #Polarity of all tweets === Sum of polarities of individual tweets
-        news_list=[] #List of tweets only => to be displayed on web page
+        news_sentiment = [] #List of news alongside polarity
+        global_polarity = 0 #Polarity of all news === Sum of polarities of individual news
+        news_list=[] #List of news only => to be displayed on web page
         #Count Positive, Negative to plot pie chart
-        pos=0 #Num of pos tweets
-        neg=1 #Num of negative tweets
+        pos=0 #Num of pos news
+        neg=1 #Num of negative news
         data_to_append = []
         for news in news_data['news']:
             count = 10
@@ -363,7 +363,7 @@ def insertintotable():
             # text = news_data['news'][i]['text']
             # sentiment = news_data['news'][i]['sentiment']
             blob = TextBlob(title)
-            polarity = 0 #Polarity of single individual tweet
+            polarity = 0 #Polarity of single individual news
             for sentence in blob.sentences:
                 # print(sentence)
                 polarity += sentence.sentiment.polarity
@@ -394,7 +394,7 @@ def insertintotable():
             global_polarity = 0
         print()
         print("##############################################################################")
-        print("Positive Tweets :",pos,"Negative Tweets :",neg,"Neutral Tweets :",neutral)
+        print("Positive News :",pos,"Negative News :",neg,"Neutral News :",neutral)
         print("##############################################################################")
         labels=['Positive','Negative','Neutral']
         sizes = [pos,neg,neutral]
@@ -473,7 +473,7 @@ def insertintotable():
         lstm_pred, error_lstm=LSTM_ALGO(df)
         df, lr_pred, forecast_set,mean,error_lr=LIN_REG_ALGO(df)
         try:
-            polarity,tw_list,tw_pol,pos,neg,neutral = retrieving_tweets_polarity(quote)
+            polarity,tw_list,tw_pol,pos,neg,neutral = retrieving_news_polarity(quote)
         except:
             polarity,tw_list,tw_pol,pos,neg,neutral = 0, ['Couldnot Extract News'], ['Coulnot Extract Polarity'], 0, 0, 0
         
