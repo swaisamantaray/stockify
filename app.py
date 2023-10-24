@@ -50,6 +50,7 @@ def index():
 @app.route('/insertintotable',methods = ['POST'])
 def insertintotable():
     nm = request.form['nm']
+    nm = nm.upper()
     print('my value is ' + nm)
 
     #**************** FUNCTIONS TO FETCH DATA ***************************
