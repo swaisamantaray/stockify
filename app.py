@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #**************** IMPORT PACKAGES ********************
-from flask import Flask, render_template, request, flash, redirect, url_for
+from flask import Flask, render_template, request
 from alpha_vantage.timeseries import TimeSeries
 import pandas as pd
 import numpy as np
@@ -11,7 +11,6 @@ import statsmodels.api as sm
 plt.style.use('ggplot')
 import math, random
 from datetime import datetime, timedelta
-import datetime as dt
 import yfinance as yf
 from sklearn.linear_model import LinearRegression
 import constants as ct
